@@ -1,11 +1,15 @@
-package com.jwt.jwt_practice.jwt;
+package com.jwt.jwt_practice;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import java.util.Date;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
+import java.util.Map;
 
 @Component
 public class JwtProvider {
@@ -23,5 +27,16 @@ public class JwtProvider {
         if (cachedSecretKey == null) cachedSecretKey = _getSecretKey();
 
         return cachedSecretKey;
+    }
+
+    public String genToken(Map<String, Object> claims, int seconds) {
+        long now = new Date().getTime();
+        Date accessTokenExpiresIn = new Date(now + 1000L * seconds);
+
+        return Jwts.builder()
+                .claim("body", Ut.json.toStr(claims))
+                .setExpiration(accessTokenExpiresIn)
+                .signWith(getSecretKey(), SignatureAlgorithm.HS512)
+                .compact();
     }
 }
