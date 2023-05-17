@@ -18,6 +18,7 @@ public class JwtProvider {
     @Value("${custom.jwt.secretKey}")
     private String secretKeyPlain;
 
+    //-- Secrete Key 생성 --//
     private SecretKey _getSecretKey() {
         String keyBase64Encoded = Base64.getEncoder().encodeToString(secretKeyPlain.getBytes());
         return Keys.hmacShaKeyFor(keyBase64Encoded.getBytes());
@@ -29,6 +30,7 @@ public class JwtProvider {
         return cachedSecretKey;
     }
 
+    //-- Access Token 생성 --//
     public String genToken(Map<String, Object> claims, int seconds) {
         long now = new Date().getTime();
         Date accessTokenExpiresIn = new Date(now + 1000L * seconds);
@@ -38,5 +40,31 @@ public class JwtProvider {
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(getSecretKey(), SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    //-- Token 유효성 검사 --//
+    public boolean verify(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(getSecretKey())
+                    .build()
+                    .parseClaimsJws(token);
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    //-- 토큰의 client 정보 디코딩 --//
+    public Map<String, Object> getClaims(String token) {
+        String body = Jwts.parserBuilder()
+                .setSigningKey(getSecretKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("body", String.class);
+
+        return Ut.json.toMap(body);
     }
 }
